@@ -21,6 +21,7 @@ add_executable(motionsick_logger
     ui/toggle_window.cpp
     logger/database_logger.cpp
     logger/csv_logger.cpp
+    logger/estimate_heart_rate_from_rgb.cpp
 )
 
 target_link_libraries(

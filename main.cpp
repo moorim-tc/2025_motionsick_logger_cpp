@@ -89,7 +89,9 @@ int main(int argc, char *argv[]) {
     });
     dataAggregatorThread.detach();
 
-    start_csv_logger(running, toggle_state);  // 내부에서 자체 스레드 생성 및 detach 처리
+    std::string log_path = "summary_log.csv";
+    initialize_csv(log_path);
+    start_csv_logger(running, toggle_state, log_path);  // 내부에서 자체 스레드 생성 및 detach 처리
 
     // ✅ 4. Qt UI 실행
     ToggleWindow window(toggle_state);

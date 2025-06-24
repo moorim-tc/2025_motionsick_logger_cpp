@@ -142,8 +142,6 @@ while True:
         rotation_matrix = matrix[:3, :3].tolist()
         translation_vector = matrix[:3, 3].tolist()
 
-
-
         # print(f"{blendshape_dict=}")
         avg_rgb, masked_image = get_average_rgb(image, landmark_list, image.shape)  
 
@@ -158,16 +156,26 @@ while True:
             "translation_vector": translation_vector
         }
 
-        print(f"{data.keys()=}")
+    else:
+    # 얼굴이 감지되지 않은 경우 빈 데이터 전송
+        data = {
+            "timestamp": time.time(),
+            "blendshapes": {},
+            "avg_rgb": [],
+            "rotation_matrix": [],
+            "translation_vector": []
+        }
 
-        json_data = json.dumps(data)
-        sock.sendall(json_data.encode('utf-8') + b'\n')  # \n으로 구분
+        # print(f"{data.keys()=}")
 
-    # ⏱ FPS 계산
-    end_time = time.time()
-    frame_time = end_time - start_time
-    frame_times.append(frame_time)
-    if len(frame_times) >= 10:
-        fps = 1.0 / (sum(frame_times) / len(frame_times))
-        print(f"[INFO] FPS: {fps:.2f}")
+    json_data = json.dumps(data)
+    sock.sendall(json_data.encode('utf-8') + b'\n')  # \n으로 구분
+
+    # # ⏱ FPS 계산
+    # end_time = time.time()
+    # frame_time = end_time - start_time
+    # frame_times.append(frame_time)
+    # if len(frame_times) >= 10:
+    #     fps = 1.0 / (sum(frame_times) / len(frame_times))
+    #     print(f"[INFO] FPS: {fps:.2f}")
 
