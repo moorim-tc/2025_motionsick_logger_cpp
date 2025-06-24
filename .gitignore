@@ -1,0 +1,19 @@
+/.venv
+/build
+/.vscode
+
+# Python
+__pycache__/
+*.pyc
+
+# Qt Creator / CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
