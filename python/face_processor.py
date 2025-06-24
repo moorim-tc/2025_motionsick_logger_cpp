@@ -14,6 +14,13 @@ from mediapipe.tasks import python
 import os
 from picamera2 import Picamera2
 
+import os
+pid_dir = "/home/moorim/2025_motionsick_logger_cpp/python/tmp"
+os.makedirs(pid_dir, exist_ok=True)  # ✅ Create the directory if it doesn't exist
+
+with open(os.path.join(pid_dir, "face_processor.pid"), "w") as f:
+    f.write(str(os.getpid()))
+
 # 모델 다운로드 (한 번만 필요)
 model_path = '/home/moorim/2025_motionsick_logger_cpp/python/face_landmarker_v2_with_blendshapes.task'
 

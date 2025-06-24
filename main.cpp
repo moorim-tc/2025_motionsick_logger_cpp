@@ -3,6 +3,10 @@
 #include <chrono>
 #include <iostream>
 #include <atomic>
+#include <QProcess>
+#include <fstream>    // for std::ifstream
+#include <csignal>    // for kill(), SIGTERM
+#include <unistd.h>   // for pid_t, kill()
 
 #include "ui/toggle_window.hpp"
 #include "include/shared_structs.hpp"
@@ -91,5 +95,17 @@ int main(int argc, char *argv[]) {
     ToggleWindow window(toggle_state);
     window.show();
 
-    return app.exec();
+    int ret = app.exec();  // run the Qt event loop first
+
+    // 🔚 After the Qt app closes, clean up the Python process
+    std::ifstream pid_file("/home/moorim/2025_motionsick_logger_cpp/python/tmp/face_processor.pid");
+    int python_pid = 0;
+    pid_file >> python_pid;
+
+    if (python_pid > 0) {
+        std::cout << "[INFO] Killing Python process with PID: " << python_pid << std::endl;
+        kill(python_pid, SIGTERM);  // or SIGKILL if needed
+    }
+
+    return ret;
 }
