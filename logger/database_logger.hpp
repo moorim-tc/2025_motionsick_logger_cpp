@@ -10,6 +10,7 @@ public:
 
     void insertFaceData(const FaceData& data);
     void insertImuData(const ImuData& data);
+    void insertGpsData(const GpsData& data);
     void insertToggleState(const std::array<int, 3>& state, double timestamp);
 
 private:

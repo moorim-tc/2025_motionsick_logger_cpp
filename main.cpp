@@ -12,6 +12,7 @@
 #include "include/shared_structs.hpp"
 #include "sensors/socket_receiver.hpp"
 #include "sensors/imu_thread.hpp"
+#include "sensors/gps_thread.hpp"
 #include "sensors/threadsafe_queue.hpp" // 공유 큐
 #include "logger/database_logger.hpp"
 #include "logger/csv_logger.hpp"
@@ -21,6 +22,8 @@ extern std::vector<FaceData> face_buffer;
 extern std::mutex face_buffer_mutex;
 extern std::vector<ImuData> imu_buffer;
 extern std::mutex imu_buffer_mutex;
+extern std::vector<GpsData> gps_buffer;
+extern std::mutex gps_buffer_mutex;
 extern const int IMU_BUFFER_MAX_SIZE;
 extern const int FACE_BUFFER_MAX_SIZE;
 
@@ -48,16 +51,22 @@ int main(int argc, char *argv[]) {
     std::thread imuThread(imu_thread, std::ref(imu_queue), std::ref(running));
     imuThread.detach();
 
+    // GPS
+    ThreadSafeQueue<GpsData> gps_queue;
+    std::thread gps(gps_thread, std::ref(gps_queue), std::ref(running));
+
     // ✅ DB 로거 인스턴스
     DatabaseLogger db_logger("data_log.db");
 
     static double last_face_timestamp = 0.0;
     static double last_imu_timestamp = 0.0;
+    static double last_gps_timestamp = 0.0;
 
     std::thread dataAggregatorThread([&db_logger]() {
         while (true) {
             std::vector<FaceData> face_snapshot;
             std::vector<ImuData> imu_snapshot;
+            std::vector<GpsData> gps_snapshot;
 
             {
                 std::lock_guard<std::mutex> lock(face_buffer_mutex);
@@ -67,6 +76,10 @@ int main(int argc, char *argv[]) {
             {
                 std::lock_guard<std::mutex> lock(imu_buffer_mutex);
                 imu_snapshot = imu_buffer;
+            }
+            {
+                std::lock_guard<std::mutex> lock(gps_buffer_mutex);
+                gps_snapshot = gps_buffer;
             }
 
             for (const auto& face : face_snapshot) {
@@ -81,6 +94,12 @@ int main(int argc, char *argv[]) {
                     db_logger.insertImuData(imu);
                     if (imu.source_timestamp > last_imu_timestamp)
                         last_imu_timestamp = imu.source_timestamp;
+                }
+            }
+            for (const auto& gps : gps_snapshot) {
+                if (gps.source_timestamp > last_gps_timestamp) {
+                    db_logger.insertGpsData(gps);
+                    last_gps_timestamp = gps.source_timestamp;
                 }
             }
 

@@ -19,6 +19,8 @@ extern std::vector<FaceData> face_buffer;
 extern std::mutex face_buffer_mutex;
 extern std::vector<ImuData> imu_buffer;
 extern std::mutex imu_buffer_mutex;
+extern std::vector<GpsData> gps_buffer;
+extern std::mutex gps_buffer_mutex;
 
 namespace {
     double compute_rms(const std::vector<float>& values) {
@@ -107,6 +109,7 @@ void start_csv_logger(std::atomic<bool>& running,
             // Get sensor sanpshot
             std::vector<FaceData> face_snapshot;
             std::vector<ImuData> imu_snapshot;
+            std::vector<GpsData> gps_snapshot;
 
             {
                 std::lock_guard<std::mutex> lock(face_buffer_mutex);
@@ -116,6 +119,11 @@ void start_csv_logger(std::atomic<bool>& running,
             {
                 std::lock_guard<std::mutex> lock(imu_buffer_mutex);
                 imu_snapshot = imu_buffer;
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(gps_buffer_mutex);
+                gps_snapshot = gps_buffer;
             }
 
             // 전제: face_snapshot 은 150개 이상일 때만 처리
@@ -266,6 +274,24 @@ void start_csv_logger(std::atomic<bool>& running,
             row["acc_rms_x"] = ax_rms;
             row["acc_rms_y"] = ay_rms;
             row["acc_rms_z"] = az_rms;
+
+            // GPS
+            std::vector<double> speed, lat, lon;
+
+            for (const auto& gps : gps_snapshot) {
+                speed.push_back(gps.speed);
+                lat.push_back(gps.lat);
+                lon.push_back(gps.lon);
+            }
+            double average_speed = 0.0;
+            if (!speed.empty()) {
+                double sum = std::accumulate(speed.begin(), speed.end(), 0.0);
+                average_speed = sum / speed.size();
+                row["speed"] = average_speed;
+            }
+            
+
+
 
             // Writing to File
             for (size_t i = 0; i < headers.size(); ++i) {

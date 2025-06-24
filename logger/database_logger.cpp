@@ -32,8 +32,18 @@ void DatabaseLogger::createTablesIfNotExist() {
         );
     )";
 
+    const char* gps_sql = R"(
+        CREATE TABLE IF NOT EXISTS gps_data (
+            timestamp REAL,
+            lat REAL,
+            lon REAL,
+            speed REAL
+        );
+    )";
+
     sqlite3_exec(db, face_sql, nullptr, nullptr, nullptr);
     sqlite3_exec(db, imu_sql, nullptr, nullptr, nullptr);
+    sqlite3_exec(db, gps_sql, nullptr, nullptr, nullptr);
 }
 
 void DatabaseLogger::insertFaceData(const FaceData& data) {
@@ -78,4 +88,21 @@ void DatabaseLogger::insertImuData(const ImuData& data) {
         std::cerr << "[DB] Error inserting IMU data: " << e.what() << std::endl;
     }
 }
+
+void DatabaseLogger::insertGpsData(const GpsData& data) {
+    try {
+        if (!db) return;
+
+        std::string sql = "INSERT INTO gps_data VALUES (" +
+            std::to_string(data.source_timestamp) + "," +
+            std::to_string(data.lat) + "," +
+            std::to_string(data.lon) + "," +
+            std::to_string(data.speed) + ");";
+
+        sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr);
+    } catch (const std::exception& e) {
+        std::cerr << "[DB] Error inserting GPS data: " << e.what() << std::endl;
+    }
+}
+
 

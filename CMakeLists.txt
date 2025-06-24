@@ -18,6 +18,7 @@ add_executable(motionsick_logger
     main.cpp
     sensors/socket_receiver.cpp
     sensors/imu_thread.cpp 
+    sensors/gps_thread.cpp
     ui/toggle_window.cpp
     logger/database_logger.cpp
     logger/csv_logger.cpp
