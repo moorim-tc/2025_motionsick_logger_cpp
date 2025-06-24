@@ -22,7 +22,7 @@ extern const int FACE_BUFFER_MAX_SIZE;
 
 int main(int argc, char *argv[]) {
     // ✅ 0. Python 얼굴 처리 스크립트 실행 (백그라운드)
-    std::system("source ../.venv/bin/activate && python ../python/face_processor.py &");
+    std::system("../.venv/bin/python ../python/face_processor.py &");
 
     QApplication app(argc, argv);
 

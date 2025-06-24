@@ -8,6 +8,7 @@
 #include <numeric>
 #include <map>
 #include <atomic>
+#include <iomanip>
 
 #include "../include/shared_structs.hpp"
 

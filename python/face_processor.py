@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/usr/lib/python3/dist-packages')
+
 import cv2
 import socket
 import json
@@ -9,16 +12,17 @@ import mediapipe as mp
 from mediapipe.tasks.python import vision
 from mediapipe.tasks import python
 import os
+from picamera2 import Picamera2
 
 # 모델 다운로드 (한 번만 필요)
-model_path = '/Users/seunghan/Desktop/Codes/01_MoorimTC/motion_sick_logger/python/face_landmarker_v2_with_blendshapes.task'
+model_path = '/home/moorim/2025_motionsick_logger_cpp/python/face_landmarker_v2_with_blendshapes.task'
 
 # FaceLandmarker 옵션 설정
 base_options = python.BaseOptions(model_asset_path=model_path)
 options = vision.FaceLandmarkerOptions(
     base_options=base_options,
     output_face_blendshapes=True,
-    # output_facial_transformation_matrix=True,
+    output_facial_transformation_matrixes=True,
     num_faces=1
 )
 
@@ -67,9 +71,11 @@ PORT = 50007
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
 
-
-
-cap = cv2.VideoCapture(0)  # MacBook 카메라
+picam2 = Picamera2()
+picam2.preview_configuration.main.format = "RGB888"
+picam2.preview_configuration.main.size = (320, 240)
+picam2.configure("preview")
+picam2.start()
 
 def get_average_rgb(image, landmarks, image_shape):
     h, w, _ = image_shape
@@ -90,27 +96,34 @@ def get_average_rgb(image, landmarks, image_shape):
     cv2.fillPoly(mask, lip_poly, 0)
 
     masked_image = cv2.bitwise_and(image, image, mask=mask)
-    mean_val = cv2.mean(masked_image, mask=mask)[:3]  # BGR → 평균
 
-    return mean_val[::-1], masked_image  # RGB, masked_image
+    # Get mask of non-zero (skin) pixels
+    non_zero_mask = mask > 0
+    number_of_skin_pixels = np.count_nonzero(non_zero_mask)
+
+    if number_of_skin_pixels == 0:
+        return (0.0, 0.0, 0.0), masked_image  # fallback
+
+    
+    
+    r = np.sum(image[:, :, 2][non_zero_mask]) / number_of_skin_pixels
+    g = np.sum(image[:, :, 1][non_zero_mask]) / number_of_skin_pixels
+    b = np.sum(image[:, :, 0][non_zero_mask]) / number_of_skin_pixels
+
+    return (r, g, b), masked_image  # RGB, masked_image
 
 
-while cap.isOpened():
+while True:
     start_time = time.time()
 
-    success, image = cap.read()
-    if not success:
-        time.sleep(0.01)
-        continue
-
-    image.flags.writeable = False
+    image = picam2.capture_array()
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
     results = face_landmarker.detect(mp_image)
 
-
-    if results.face_landmarks:
+    if results and len(results.face_landmarks)>0:
         landmark_list = []
+        
         for lm in results.face_landmarks[0]:
             landmark_list.extend([lm.x, lm.y, lm.z])
 
@@ -118,36 +131,36 @@ while cap.isOpened():
         for bs in results.face_blendshapes[0]:
             blendshape_dict[bs.category_name] = bs.score
 
+        matrix = np.array(results.facial_transformation_matrixes[0]).reshape((4, 4))
+        rotation_matrix = matrix[:3, :3].tolist()
+        translation_vector = matrix[:3, 3].tolist()
+
+
 
         # print(f"{blendshape_dict=}")
         avg_rgb, masked_image = get_average_rgb(image, landmark_list, image.shape)  
 
-        cv2.imshow("Masked Face Region", masked_image)
-        key = cv2.waitKey(1) & 0xFF
-        if key == 27:  # ESC to exit
-            break
-
+        # cv2.imwrite("/home/moorim/2025_motionsick_logger_cpp/python/masked_face.jpg", masked_image)
         
         # 현재는 랜드마크만 전송 (추후 blendshape 추가)
         data = {
             "timestamp": time.time(),
             "blendshapes": blendshape_dict,
-            "avg_rgb": avg_rgb
+            "avg_rgb": avg_rgb,
+            "rotation_matrix": rotation_matrix,
+            "translation_vector": translation_vector
         }
 
-        # print(blendshape_dict.keys())
+        print(f"{data.keys()=}")
 
         json_data = json.dumps(data)
         sock.sendall(json_data.encode('utf-8') + b'\n')  # \n으로 구분
 
-    # # ⏱ FPS 계산
-    # end_time = time.time()
-    # frame_time = end_time - start_time
-    # frame_times.append(frame_time)
-    # if len(frame_times) >= 10:
-    #     fps = 1.0 / (sum(frame_times) / len(frame_times))
-    #     print(f"[INFO] FPS: {fps:.2f}")
+    # ⏱ FPS 계산
+    end_time = time.time()
+    frame_time = end_time - start_time
+    frame_times.append(frame_time)
+    if len(frame_times) >= 10:
+        fps = 1.0 / (sum(frame_times) / len(frame_times))
+        print(f"[INFO] FPS: {fps:.2f}")
 
-
-cap.release()
-cv2.destroyAllWindows()

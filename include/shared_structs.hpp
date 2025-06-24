@@ -1,13 +1,20 @@
 #pragma once
+
 #include <chrono>
 #include <vector>
 #include <array>
 #include <atomic>
 #include <memory>
+#include <unordered_map>
+#include <mutex>
+#include <string>
+
 struct FaceData {
     double source_timestamp;
     std::unordered_map<std::string, float> blendshapes;
-    std::vector<float> avg_rgb;
+    std::vector<float> avg_rgb;             // size 3: [r, g, b]
+    std::vector<std::vector<float>> rotation_matrix; // 3x3 matrix
+    std::vector<float> translation_vector;  // size 3
 };
 
 struct ImuData {
