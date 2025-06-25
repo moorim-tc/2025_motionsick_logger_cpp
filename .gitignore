@@ -1,6 +1,7 @@
 /.venv
 /build
 /.vscode
+/data
 
 # Python
 __pycache__/
@@ -18,3 +19,4 @@ Makefile
 # macOS
 .DS_Store
 *.task
+*.pid

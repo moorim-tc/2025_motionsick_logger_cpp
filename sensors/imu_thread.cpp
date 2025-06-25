@@ -52,20 +52,20 @@ void imu_thread(ThreadSafeQueue<ImuData>& imu_queue, std::atomic<bool>& running)
     auto last_time = std::chrono::high_resolution_clock::now();
 
     while (running.load()) {
-        // auto now = std::chrono::high_resolution_clock::now();
-        // std::chrono::duration<double> interval = now - last_time;
-        // last_time = now;
+        auto now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> interval = now - last_time;
+        last_time = now;
 
-        // interval_buffer.push_back(interval.count());
-        // if (interval_buffer.size() > max_samples)
-        //     interval_buffer.pop_front();
+        interval_buffer.push_back(interval.count());
+        if (interval_buffer.size() > max_samples)
+            interval_buffer.pop_front();
 
-        // // Print average rate every 1 second
-        // if (interval_buffer.size() == max_samples) {
-        //     double avg_interval = std::accumulate(interval_buffer.begin(), interval_buffer.end(), 0.0) / interval_buffer.size();
-        //     double effective_hz = 1.0 / avg_interval;
-        //     std::cout << "[IMU] Effective Sampling Rate: " << effective_hz << " Hz" << std::endl;
-        // }
+        // Print average rate every 1 second
+        if (interval_buffer.size() == max_samples) {
+            double avg_interval = std::accumulate(interval_buffer.begin(), interval_buffer.end(), 0.0) / interval_buffer.size();
+            double effective_hz = 1.0 / avg_interval;
+            std::cout << "[IMU] Effective Sampling Rate: " << effective_hz << " Hz" << std::endl;
+        }
 
         ImuData data;
 

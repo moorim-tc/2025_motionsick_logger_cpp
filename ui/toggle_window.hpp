@@ -28,4 +28,5 @@ private:
     SharedToggleState external_state;  // 외부와 공유되는 상태 포인터
 
     void printStates();
+    void close_app(); 
 };
