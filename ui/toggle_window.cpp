@@ -13,9 +13,13 @@ ToggleWindow::ToggleWindow(SharedToggleState shared_state, QWidget *parent)
     : QWidget(parent), external_state(shared_state),
       label_names{ "멀미", "불편함", "불안감" } {
 
+    // Remove window decorations
+    setWindowFlags(Qt::FramelessWindowHint);
+
     // Fullscreen setup and black background
     setWindowTitle("Data Logger");
     setStyleSheet("background-color: black;");
+    showFullScreen();  // Use full screen including hiding the menu bar
 
     QScreen *screen = QApplication::primaryScreen();
     if (screen) {

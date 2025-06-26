@@ -111,8 +111,6 @@ def get_average_rgb(image, landmarks, image_shape):
     if number_of_skin_pixels == 0:
         return (0.0, 0.0, 0.0), masked_image  # fallback
 
-    
-    
     r = np.sum(image[:, :, 2][non_zero_mask]) / number_of_skin_pixels
     g = np.sum(image[:, :, 1][non_zero_mask]) / number_of_skin_pixels
     b = np.sum(image[:, :, 0][non_zero_mask]) / number_of_skin_pixels

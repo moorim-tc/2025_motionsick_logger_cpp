@@ -17,7 +17,7 @@ using json = nlohmann::json;
 // ✅ 전역 버퍼 및 뮤텍스 선언 (정의는 socket_receiver.hpp 혹은 cpp 상단에서)
 std::vector<FaceData> face_buffer;
 std::mutex face_buffer_mutex;
-const int FACE_BUFFER_MAX_SIZE = 200;
+const int FACE_BUFFER_MAX_SIZE = 10 * 10;
 
 void socket_receiver(ThreadSafeQueue<FaceData>& face_queue, std::atomic<bool>& running) {
     int server_fd, new_socket;

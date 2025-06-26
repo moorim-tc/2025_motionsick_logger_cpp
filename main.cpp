@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     std::thread gps(gps_thread, std::ref(gps_queue), std::ref(running));
 
     // ✅ DB 로거 인스턴스
-    DatabaseLogger db_logger("/home/moorim/2025_motionsick_logger_cpp/build/data_log.db");
+    DatabaseLogger db_logger("/home/moorim/2025_motionsick_logger_cpp/data/data_log.db");
 
     static double last_face_timestamp = 0.0;
     static double last_imu_timestamp = 0.0;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     });
     dataAggregatorThread.detach();
 
-    std::string log_path = "/home/moorim/2025_motionsick_logger_cpp/build/summary_log.csv";
+    std::string log_path = "/home/moorim/2025_motionsick_logger_cpp/data/summary_log.csv";
     initialize_csv(log_path);
     start_csv_logger(running, toggle_state, log_path);  // 내부에서 자체 스레드 생성 및 detach 처리
 

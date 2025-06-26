@@ -49,8 +49,11 @@ const std::vector<std::string> blend_shape_keys = {
 // ✅ Correct: use brace-enclosed initializer and concat using constructor
 const std::vector<std::string> headers = [] {
     std::vector<std::string> h = {
-        "timestamp", "멀미", "불편함", "불안감", "speed", "trajectory", "heading",
-        "acc_rms_x", "acc_rms_y", "acc_rms_z", "hr", "r", "g", "b", "head_tv", "head_rv"
+        "timestamp", 
+        "멀미", "불편함", "불안감", 
+        "speed", "trajectory",
+        "acc_rms_x", "acc_rms_y", "acc_rms_z", "roll_rate_rms", "pitch_rate_rms", "yaw_rate_rms",
+        "hr", "r", "g", "b", "head_tv", "head_rv"
     };
     h.insert(h.end(), blend_shape_keys.begin(), blend_shape_keys.end());
     return h;
@@ -87,11 +90,13 @@ void start_csv_logger(std::atomic<bool>& running,
             row["불안감"] = toggle2;
             row["speed"] = 0.0;
             row["tragectory"] = 0.0;
-            row["heading"] = 0.0;
 
             row["acc_rms_x"] = 0.0;
             row["acc_rms_y"] = 0.0;
             row["acc_rms_z"] = 0.0;
+            row["roll_rate_rms"] = 0.0;
+            row["pitch_rate_rms"] = 0.0;
+            row["yaw_rate_rms"] = 0.0;
 
             row["hr"] = 0.0;
             row["r"] = 0.0;
@@ -127,7 +132,7 @@ void start_csv_logger(std::atomic<bool>& running,
             }
 
             // 전제: face_snapshot 은 150개 이상일 때만 처리
-            if (face_snapshot.size() > 150) {
+            if (face_snapshot.size() > 99) {
                 double t_start = face_snapshot.front().source_timestamp;
                 double t_end = face_snapshot.back().source_timestamp;
                 double elapsed = t_end - t_start;
@@ -269,11 +274,12 @@ void start_csv_logger(std::atomic<bool>& running,
             double gy_rms = compute_rms(gy);
             double gz_rms = compute_rms(gz);
 
-            row["heading"] = gx_rms;
-
             row["acc_rms_x"] = ax_rms;
             row["acc_rms_y"] = ay_rms;
             row["acc_rms_z"] = az_rms;
+            row["roll_rate_rms"] = gx_rms;
+            row["pitch_rate_rms"] = gy_rms;
+            row["yaw_rate_rms"] = gz_rms;
 
             // GPS
             std::vector<double> speed, lat, lon;
@@ -289,9 +295,6 @@ void start_csv_logger(std::atomic<bool>& running,
                 average_speed = sum / speed.size();
                 row["speed"] = average_speed;
             }
-            
-
-
 
             // Writing to File
             for (size_t i = 0; i < headers.size(); ++i) {

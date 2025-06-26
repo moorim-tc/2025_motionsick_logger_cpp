@@ -19,7 +19,7 @@ int gps_fd = -1;
 
 std::vector<GpsData> gps_buffer;
 std::mutex gps_buffer_mutex;
-const int GPS_BUFFER_MAX_SIZE = 100;
+const int GPS_BUFFER_MAX_SIZE = 10 * 10;
 
 bool open_gps_serial() {
     gps_fd = open(GPS_SERIAL_DEV, O_RDWR | O_NOCTTY | O_NDELAY);
@@ -108,11 +108,12 @@ void gps_thread(ThreadSafeQueue<GpsData>& gps_queue, std::atomic<bool>& running)
             } else {
                 std::cout << "[GPS] No fix yet (status = V)" << std::endl;
             }
-        } else {
-            std::cout << "[GPS] Incomplete $GNRMC sentence skipped." << std::endl;
-        }
+        } 
+        // else {
+        //     std::cout << "[GPS] Incomplete $GNRMC sentence skipped." << std::endl;
+        // }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));  // ~50Hz check
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));  // ~50Hz check
     }
 
     close(gps_fd);

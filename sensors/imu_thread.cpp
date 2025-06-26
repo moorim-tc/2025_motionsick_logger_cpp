@@ -30,7 +30,7 @@ int16_t read16(uint8_t reg) {
 
 std::vector<ImuData> imu_buffer;
 std::mutex imu_buffer_mutex;
-const int IMU_BUFFER_MAX_SIZE = 100;
+const int IMU_BUFFER_MAX_SIZE = 50 * 10;
 
 void imu_thread(ThreadSafeQueue<ImuData>& imu_queue, std::atomic<bool>& running) {
     std::cout << "[IMU Thread] Started." << std::endl;
@@ -52,20 +52,20 @@ void imu_thread(ThreadSafeQueue<ImuData>& imu_queue, std::atomic<bool>& running)
     auto last_time = std::chrono::high_resolution_clock::now();
 
     while (running.load()) {
-        auto now = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> interval = now - last_time;
-        last_time = now;
+        // auto now = std::chrono::high_resolution_clock::now();
+        // std::chrono::duration<double> interval = now - last_time;
+        // last_time = now;
 
-        interval_buffer.push_back(interval.count());
-        if (interval_buffer.size() > max_samples)
-            interval_buffer.pop_front();
+        // interval_buffer.push_back(interval.count());
+        // if (interval_buffer.size() > max_samples)
+        //     interval_buffer.pop_front();
 
-        // Print average rate every 1 second
-        if (interval_buffer.size() == max_samples) {
-            double avg_interval = std::accumulate(interval_buffer.begin(), interval_buffer.end(), 0.0) / interval_buffer.size();
-            double effective_hz = 1.0 / avg_interval;
-            std::cout << "[IMU] Effective Sampling Rate: " << effective_hz << " Hz" << std::endl;
-        }
+        // // Print average rate every 1 second
+        // if (interval_buffer.size() == max_samples) {
+        //     double avg_interval = std::accumulate(interval_buffer.begin(), interval_buffer.end(), 0.0) / interval_buffer.size();
+        //     double effective_hz = 1.0 / avg_interval;
+        //     std::cout << "[IMU] Effective Sampling Rate: " << effective_hz << " Hz" << std::endl;
+        // }
 
         ImuData data;
 
@@ -75,34 +75,34 @@ void imu_thread(ThreadSafeQueue<ImuData>& imu_queue, std::atomic<bool>& running)
         ).count();
 
         // Read linear acceleration (registers: 0x28 to 0x2D)
-        int16_t ax = read16(0x28);
-        int16_t ay = read16(0x2A);
-        int16_t az = read16(0x2C);
-
-        // Read Euler heading (registers: 0x1A LSB, 0x1B MSB)
-        int16_t heading_raw = read16(0x1A);  // heading in 1/16 degrees
-        float heading_deg = heading_raw / 16.0f;
+        int16_t ax = read16(0x08);
+        int16_t ay = read16(0x0A);
+        int16_t az = read16(0x0C);
 
         // Transform acceleration to match your Python coordinate logic
         data.accel = {
-            static_cast<float>(-az) / 100.0f,  // reverse Z
-            static_cast<float>(ax) / 100.0f,   // X
-            static_cast<float>(ay) / 100.0f    // Y
+            static_cast<float>(az) / 100.0f,  // device x
+            static_cast<float>(ax) / 100.0f,   // device y
+            static_cast<float>(-ay) / 100.0f  // device z
         };
 
-        // Heading delta computation (optional)
-        static float previous_heading = 0.0f;
-        float delta_heading = heading_deg - previous_heading;
-        if (std::abs(delta_heading) > 180.0f) {
-            if (delta_heading < 0)
-                delta_heading += 360.0f;
-            else
-                delta_heading -= 360.0f;
-        }
-        previous_heading = heading_deg;
+        // Read raw gyro values (X, Y, Z)
+        int16_t gyro_x_raw = read16(0x14);  // Gyro X (Pitch)
+        int16_t gyro_y_raw = read16(0x16);  // Gyro Y (Roll)
+        int16_t gyro_z_raw = read16(0x18);  // Gyro Z (Yaw)
+
+        // 변환: 1/16 deg/s 단위 → deg/s
+        float pitch_rate = gyro_x_raw / 16.0f;  // 실제로는 'device Y-axis'
+        float roll_rate  = gyro_y_raw / 16.0f;  // 실제로는 'device Z-axis'
+        float yaw_rate   = gyro_z_raw / 16.0f;  // 실제로는 'device X-axis'
+
+        // 좌표계 변환 (센서 → 디바이스 기준)
+        float device_x_rate = yaw_rate;         // X: 회전축 Z (Yaw)
+        float device_y_rate = pitch_rate;       // Y: 회전축 X (Pitch)
+        float device_z_rate = -roll_rate;       // Z: 회전축 Y (Roll → 반전 필요)
 
         // Store heading instead of gyro
-        data.gyro = {delta_heading, 0.0f, 0.0f};
+        data.gyro = {device_x_rate, device_y_rate, device_z_rate};
 
         {
             std::lock_guard<std::mutex> lock(imu_buffer_mutex);
