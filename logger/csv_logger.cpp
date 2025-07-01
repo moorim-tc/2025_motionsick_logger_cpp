@@ -289,6 +289,7 @@ void start_csv_logger(std::atomic<bool>& running,
                 lat.push_back(gps.lat);
                 lon.push_back(gps.lon);
             }
+
             double average_speed = 0.0;
             if (!speed.empty()) {
                 double sum = std::accumulate(speed.begin(), speed.end(), 0.0);
@@ -296,6 +297,10 @@ void start_csv_logger(std::atomic<bool>& running,
                 row["speed"] = average_speed;
             }
 
+            // R² 계산 (lat = f(lon) 또는 lon = f(lat), 둘 다 가능)
+            double r2 = compute_r2(lon, lat);  // 또는 compute_r2(lat, lon);
+            row["tragectory"] = r2;
+            
             // Writing to File
             for (size_t i = 0; i < headers.size(); ++i) {
                 const std::string& col = headers[i];
@@ -338,4 +343,25 @@ void initialize_csv(const std::string& log_path) {
         file.flush();
         std::cout << "✅ CSV header written to " << log_path << std::endl;
     }
+}
+
+// 1차 선형회귀로 R^2 계산
+double compute_r2(const std::vector<double>& x, const std::vector<double>& y) {
+    if (x.size() != y.size() || x.empty()) return 0.0;
+
+    const size_t n = x.size();
+    double mean_x = std::accumulate(x.begin(), x.end(), 0.0) / n;
+    double mean_y = std::accumulate(y.begin(), y.end(), 0.0) / n;
+
+    double Sxy = 0.0, Sxx = 0.0, Syy = 0.0;
+    for (size_t i = 0; i < n; ++i) {
+        double dx = x[i] - mean_x;
+        double dy = y[i] - mean_y;
+        Sxy += dx * dy;
+        Sxx += dx * dx;
+        Syy += dy * dy;
+    }
+
+    double r2 = (Sxy * Sxy) / (Sxx * Syy + 1e-9);  // 1e-9: divide-by-zero 방지
+    return r2;
 }

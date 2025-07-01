@@ -76,7 +76,7 @@ void gps_thread(ThreadSafeQueue<GpsData>& gps_queue, std::atomic<bool>& running)
     while (running.load()) {
         std::string line = read_line_from_gps();
 
-        if (line.find("$GNRMC") != std::string::npos) {
+        if (line.find("$GPRMC") != std::string::npos) {
             std::stringstream ss(line);
             std::string field;
             std::vector<std::string> fields;
