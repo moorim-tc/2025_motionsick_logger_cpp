@@ -28,6 +28,12 @@ ToggleWindow::ToggleWindow(SharedToggleState shared_state, QWidget *parent)
         setGeometry(screen->geometry());
     }
 
+ 
+    // Face detection status circle
+    status_circle = new QLabel();
+    status_circle->setFixedSize(20, 20);
+    status_circle->setStyleSheet("background-color: gray; border-radius: 10px;");
+
     // Time label
     time_label = new QLabel("00:00:00");
     time_label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -68,7 +74,8 @@ ToggleWindow::ToggleWindow(SharedToggleState shared_state, QWidget *parent)
 
     // Top layout: time + invisible quit
     QHBoxLayout *top_layout = new QHBoxLayout();
-    top_layout->addWidget(time_label, 0, Qt::AlignLeft);
+    top_layout->addWidget(status_circle, 0, Qt::AlignLeft| Qt::AlignVCenter);
+    top_layout->addWidget(time_label, 0, Qt::AlignLeft| Qt::AlignVCenter);
     top_layout->addStretch();
     top_layout->addWidget(quit_button, 0, Qt::AlignRight);
 
@@ -94,6 +101,9 @@ ToggleWindow::ToggleWindow(SharedToggleState shared_state, QWidget *parent)
             .arg(secs, 2, 10, QLatin1Char('0')));
     });
     update_timer->start(1000);
+
+    // ✅ 얼굴 감지 상태 업데이트용 Signal-Slot 연결
+    connect(this, &ToggleWindow::faceDetectionChanged, this, &ToggleWindow::setFaceDetected);
 }
 
 void ToggleWindow::printStates() {
@@ -107,4 +117,12 @@ void ToggleWindow::close_app() {
     qDebug() << "[Toggle] Secret quit triggered";
     close();
     QApplication::quit();
+}
+
+void ToggleWindow::setFaceDetected(bool detected) {
+    if (detected) {
+        status_circle->setStyleSheet("background-color: green; border-radius: 10px;");
+    } else {
+        status_circle->setStyleSheet("background-color: gray; border-radius: 10px;");
+    }
 }

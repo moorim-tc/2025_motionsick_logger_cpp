@@ -38,12 +38,16 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 3; ++i) {
         (*toggle_state)[i].store(0); // 초기화
     }
+    
+    // ✅ 4. Qt UI 실행
+    ToggleWindow window(toggle_state);
+    window.show();
 
     std::atomic<bool> running(true);
 
     // ✅ FaceData 큐 생성 및 소켓 수신기 실행
     ThreadSafeQueue<FaceData> face_data_queue;
-    std::thread socket_thread(socket_receiver, std::ref(face_data_queue), std::ref(running));
+    std::thread socket_thread(socket_receiver, std::ref(face_data_queue), std::ref(running), &window);
     socket_thread.detach();
 
     // ✅ IMU 큐 및 스레드 실행
@@ -112,9 +116,7 @@ int main(int argc, char *argv[]) {
     initialize_csv(log_path);
     start_csv_logger(running, toggle_state, log_path);  // 내부에서 자체 스레드 생성 및 detach 처리
 
-    // ✅ 4. Qt UI 실행
-    ToggleWindow window(toggle_state);
-    window.show();
+    
 
     int ret = app.exec();  // run the Qt event loop first
 

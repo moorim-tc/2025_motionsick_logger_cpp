@@ -11,6 +11,7 @@
 
 #include "../include/shared_structs.hpp"
 #include "threadsafe_queue.hpp"
+#include "toggle_window.hpp"
 
 using json = nlohmann::json;
 
@@ -19,7 +20,7 @@ std::vector<FaceData> face_buffer;
 std::mutex face_buffer_mutex;
 const int FACE_BUFFER_MAX_SIZE = 10 * 10;
 
-void socket_receiver(ThreadSafeQueue<FaceData>& face_queue, std::atomic<bool>& running) {
+void socket_receiver(ThreadSafeQueue<FaceData>& face_queue, std::atomic<bool>& running, ToggleWindow* ui_window) {
     int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
@@ -61,6 +62,11 @@ void socket_receiver(ThreadSafeQueue<FaceData>& face_queue, std::atomic<bool>& r
                 bool is_empty_face = j["avg_rgb"].empty() &&
                                     j["blendshapes"].empty() &&
                                     j["rotation_matrix"].empty();
+
+                // ✅ emit face detection signal to UI
+                if (ui_window) {
+                    emit ui_window->faceDetectionChanged(!is_empty_face);
+                }
 
                 if (is_empty_face) {
                     std::lock_guard<std::mutex> lock(face_buffer_mutex);
