@@ -81,9 +81,9 @@ void imu_thread(ThreadSafeQueue<ImuData>& imu_queue, std::atomic<bool>& running)
 
         // Transform acceleration to match your Python coordinate logic
         data.accel = {
-            static_cast<float>(az) / 100.0f,  // device x
-            static_cast<float>(ax) / 100.0f,   // device y
-            static_cast<float>(-ay) / 100.0f  // device z
+            static_cast<float>(-az) / 100.0f,  // device x
+            static_cast<float>(-ax) / 100.0f,   // device y
+            static_cast<float>(ay) / 100.0f  // device z
         };
 
         // Read raw gyro values (X, Y, Z)
@@ -97,12 +97,19 @@ void imu_thread(ThreadSafeQueue<ImuData>& imu_queue, std::atomic<bool>& running)
         float yaw_rate   = gyro_z_raw / 16.0f;  // 실제로는 'device X-axis'
 
         // 좌표계 변환 (센서 → 디바이스 기준)
-        float device_x_rate = yaw_rate;         // X: 회전축 Z (Yaw)
-        float device_y_rate = pitch_rate;       // Y: 회전축 X (Pitch)
-        float device_z_rate = -roll_rate;       // Z: 회전축 Y (Roll → 반전 필요)
+        float device_x_rate = -yaw_rate;         // X: 회전축 Z (Yaw)
+        float device_y_rate = -pitch_rate;       // Y: 회전축 X (Pitch)
+        float device_z_rate = roll_rate;       // Z: 회전축 Y (Roll → 반전 필요)
 
         // Store heading instead of gyro
         data.gyro = {device_x_rate, device_y_rate, device_z_rate};
+        
+        // Print accel values
+        std::cout << "Accel (X, Y, Z): ";
+        for (const auto& a : data.accel) {
+            std::cout << a << " ";
+        }
+        std::cout << std::endl;
 
         {
             std::lock_guard<std::mutex> lock(imu_buffer_mutex);
