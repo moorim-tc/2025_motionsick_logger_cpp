@@ -104,12 +104,12 @@ void imu_thread(ThreadSafeQueue<ImuData>& imu_queue, std::atomic<bool>& running)
         // Store heading instead of gyro
         data.gyro = {device_x_rate, device_y_rate, device_z_rate};
         
-        // Print accel values
-        std::cout << "Accel (X, Y, Z): ";
-        for (const auto& a : data.accel) {
-            std::cout << a << " ";
-        }
-        std::cout << std::endl;
+        // // Print accel values
+        // std::cout << "Accel (X, Y, Z): ";
+        // for (const auto& a : data.accel) {
+        //     std::cout << a << " ";
+        // }
+        // std::cout << std::endl;
 
         {
             std::lock_guard<std::mutex> lock(imu_buffer_mutex);
