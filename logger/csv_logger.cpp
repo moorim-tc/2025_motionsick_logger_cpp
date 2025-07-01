@@ -29,6 +29,27 @@ namespace {
         for (float v : values) sum_sq += v * v;
         return std::sqrt(sum_sq / values.size());
     }
+    
+    // 1차 선형회귀로 R^2 계산
+    double compute_r2(const std::vector<double>& x, const std::vector<double>& y) {
+        if (x.size() != y.size() || x.empty()) return 0.0;
+
+        const size_t n = x.size();
+        double mean_x = std::accumulate(x.begin(), x.end(), 0.0) / n;
+        double mean_y = std::accumulate(y.begin(), y.end(), 0.0) / n;
+
+        double Sxy = 0.0, Sxx = 0.0, Syy = 0.0;
+        for (size_t i = 0; i < n; ++i) {
+            double dx = x[i] - mean_x;
+            double dy = y[i] - mean_y;
+            Sxy += dx * dy;
+            Sxx += dx * dx;
+            Syy += dy * dy;
+        }
+
+        double r2 = (Sxy * Sxy) / (Sxx * Syy + 1e-9);  // 1e-9: divide-by-zero 방지
+        return r2;
+    }
 }
 
 const std::vector<std::string> blend_shape_keys = {
@@ -345,23 +366,3 @@ void initialize_csv(const std::string& log_path) {
     }
 }
 
-// 1차 선형회귀로 R^2 계산
-double compute_r2(const std::vector<double>& x, const std::vector<double>& y) {
-    if (x.size() != y.size() || x.empty()) return 0.0;
-
-    const size_t n = x.size();
-    double mean_x = std::accumulate(x.begin(), x.end(), 0.0) / n;
-    double mean_y = std::accumulate(y.begin(), y.end(), 0.0) / n;
-
-    double Sxy = 0.0, Sxx = 0.0, Syy = 0.0;
-    for (size_t i = 0; i < n; ++i) {
-        double dx = x[i] - mean_x;
-        double dy = y[i] - mean_y;
-        Sxy += dx * dy;
-        Sxx += dx * dx;
-        Syy += dy * dy;
-    }
-
-    double r2 = (Sxy * Sxy) / (Sxx * Syy + 1e-9);  // 1e-9: divide-by-zero 방지
-    return r2;
-}
