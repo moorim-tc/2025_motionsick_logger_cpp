@@ -21,6 +21,8 @@ ToggleWindow::ToggleWindow(SharedToggleState shared_state, QWidget *parent)
     setStyleSheet("background-color: black;");
     showFullScreen();  // Use full screen including hiding the menu bar
 
+    setCursor(Qt::BlankCursor);  // 🔒 Hide mouse cursor
+
     QScreen *screen = QApplication::primaryScreen();
     if (screen) {
         setGeometry(screen->geometry());
