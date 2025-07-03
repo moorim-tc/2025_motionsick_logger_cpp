@@ -49,5 +49,7 @@ extern std::mutex imu_buffer_mutex;
 extern const int FACE_BUFFER_MAX_SIZE;
 extern const int IMU_BUFFER_MAX_SIZE;
 
+extern std::atomic<double> last_face_detected_time;
+
 // 각 버튼 상태를 독립적으로 atomic하게 관리
 using SharedToggleState = std::shared_ptr<std::array<std::atomic<int>, 3>>;

@@ -27,6 +27,8 @@ extern std::mutex gps_buffer_mutex;
 extern const int IMU_BUFFER_MAX_SIZE;
 extern const int FACE_BUFFER_MAX_SIZE;
 
+std::atomic<double> last_face_detected_time{0.0};  // 실제 정의
+
 int main(int argc, char *argv[]) {
     // ✅ 0. Python 얼굴 처리 스크립트 실행 (백그라운드)
     std::system("/home/moorim/2025_motionsick_logger_cpp/.venv/bin/python /home/moorim/2025_motionsick_logger_cpp/python/face_processor.py &");
@@ -68,6 +70,16 @@ int main(int argc, char *argv[]) {
 
     std::thread dataAggregatorThread([&db_logger]() {
         while (true) {
+
+            double now = std::chrono::duration<double>(
+                std::chrono::system_clock::now().time_since_epoch()
+            ).count();
+
+            if (now - last_face_detected_time.load() > 60.0) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                continue;  // 최근 얼굴 감지 이후 60초 경과 → 로깅 중단
+            }
+            
             std::vector<FaceData> face_snapshot;
             std::vector<ImuData> imu_snapshot;
             std::vector<GpsData> gps_snapshot;

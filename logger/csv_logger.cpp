@@ -91,6 +91,16 @@ void start_csv_logger(std::atomic<bool>& running,
 
         while (running) {
 
+            // ✅ 얼굴 감지 후 60초가 지났다면 skip
+            double now = std::chrono::duration<double>(
+                std::chrono::system_clock::now().time_since_epoch()
+            ).count();
+
+            if (now - last_face_detected_time.load() > 60.0) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                continue;
+            }
+
             // 현재 시간 기록 (초 단위)
             auto now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
             std::tm* now_tm = std::localtime(&now_time_t);

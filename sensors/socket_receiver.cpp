@@ -65,7 +65,16 @@ void socket_receiver(ThreadSafeQueue<FaceData>& face_queue, std::atomic<bool>& r
 
                 // ✅ emit face detection signal to UI
                 if (ui_window) {
-                    emit ui_window->faceDetectionChanged(!is_empty_face);
+                    // emit ui_window->faceDetectionChanged(!is_empty_face);
+                    bool detected = !is_empty_face;
+                    emit ui_window->faceDetectionChanged(detected);  // ✅ 그대로 유지 (UI는 즉시 반응)
+
+                    if (detected) {
+                        double now = std::chrono::duration<double>(
+                            std::chrono::system_clock::now().time_since_epoch()
+                        ).count();
+                        last_face_detected_time.store(now);  // ✅ 60초 타이머용 상태값 업데이트
+                    }
                 }
 
                 if (is_empty_face) {
